@@ -63,34 +63,10 @@ interface NavigationMapProps {
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
-// Remembers whether the clinician last left the map open or collapsed.
-// First visit (no stored value): open on desktop, collapsed on phones.
-const MAP_OPEN_STORAGE_KEY = 'ecc.navMapOpen';
 
 function isMobileViewport(): boolean {
   if (typeof window === 'undefined') return false;
   return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-}
-
-function readInitialOpenState(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    const stored = window.localStorage.getItem(MAP_OPEN_STORAGE_KEY);
-    if (stored === 'true') return true;
-    if (stored === 'false') return false;
-  } catch {
-    // localStorage can be unavailable (private mode, blocked storage); fall through.
-  }
-  return !isMobileViewport();
-}
-
-function persistOpenState(isOpen: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(MAP_OPEN_STORAGE_KEY, String(isOpen));
-  } catch {
-    // Non-fatal: the map still works, we just won't remember the choice.
-  }
 }
 
 export function NavigationMap({
@@ -102,9 +78,10 @@ export function NavigationMap({
   onShowResources,
   onToggleOpen,
 }: NavigationMapProps) {
-  // Open by default on the first visit (desktop); afterwards, whatever the
-  // clinician last chose. See MAP_OPEN_STORAGE_KEY.
-  const [isOpen, setIsOpen] = useState<boolean>(readInitialOpenState);
+  // Always open when the page loads (desktop); collapsed on phones. Collapsing
+  // it lasts only for the current page view: a refresh brings it back
+  // (decision 2026-08-19: "map down by default").
+  const [isOpen, setIsOpen] = useState<boolean>(() => !isMobileViewport());
 
   const activePhase = currentPhase || detectedPhase;
   const visiblePhase = detectedPhase || currentPhase;
@@ -112,13 +89,7 @@ export function NavigationMap({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const media = window.matchMedia(MOBILE_MEDIA_QUERY);
-    // Crossing the mobile breakpoint collapses/expands the map, but only if
-    // the clinician has not explicitly chosen a state.
-    const handler = (e: MediaQueryListEvent) => {
-      let stored: string | null = null;
-      try { stored = window.localStorage.getItem(MAP_OPEN_STORAGE_KEY); } catch { /* ignore */ }
-      if (stored === null) setIsOpen(!e.matches);
-    };
+    const handler = (e: MediaQueryListEvent) => setIsOpen(!e.matches);
 
     if (media.addEventListener) {
       media.addEventListener('change', handler);
@@ -135,7 +106,6 @@ export function NavigationMap({
   const handleToggle = () => {
     const newValue = !isOpen;
     setIsOpen(newValue);
-    persistOpenState(newValue);
   };
 
   const COLS = STEPS.length;
