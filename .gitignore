@@ -26,3 +26,6 @@ drizzle/*.d.ts
 # IDE
 .idea/
 .vscode/
+
+# eval harness dry-run outputs (real runs are kept)
+eval-results/*_dry.json
