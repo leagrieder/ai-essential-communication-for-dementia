@@ -80,21 +80,32 @@ export function ChatWindow({
   // - when the clinician sends a message or the coach is still thinking,
   //   follow to the bottom as before;
   // - when a whole conversation is loaded from history, jump to the bottom.
+  // Decide purely on what was added to the list. (The coach reply is appended
+  // while `isLoading` is still true and only clears after the reply has been
+  // persisted, so the loading flag must not gate this.)
   useEffect(() => {
     const prevCount = prevMessageCountRef.current;
     const count = messages.length;
     prevMessageCountRef.current = count;
 
+    if (count === 0 || count === prevCount) return; // nothing new: don't move the view
     const last = messages[count - 1];
-    const singleNewAssistantMessage =
-      count === prevCount + 1 && prevCount > 0 && last?.role === 'assistant';
 
-    if (singleNewAssistantMessage && !isLoading) {
+    if (prevCount === 0 && count > 1) {
+      scrollToBottom(); // a whole conversation loaded from history
+      return;
+    }
+    if (last.role === 'assistant') {
       lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
-    scrollToBottom();
-  }, [messages, isLoading]);
+    scrollToBottom(); // the clinician's own message
+  }, [messages]);
+
+  // While the coach is thinking, keep the indicator in view.
+  useEffect(() => {
+    if (isLoading) scrollToBottom();
+  }, [isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
