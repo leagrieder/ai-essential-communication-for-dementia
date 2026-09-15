@@ -54,6 +54,8 @@ export function ChatWindow({
     return 'basic';
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
 
   // Check if this is a new session (no messages yet)
   const isNewSession = messages.length === 0;
@@ -71,7 +73,26 @@ export function ChatWindow({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Scroll rules (task list 2026-09-04, Nora & Umila):
+  // - when a NEW coach response arrives, scroll so its START is at the top of
+  //   the view, so the clinician reads from the beginning instead of having
+  //   to scroll back up;
+  // - when the clinician sends a message or the coach is still thinking,
+  //   follow to the bottom as before;
+  // - when a whole conversation is loaded from history, jump to the bottom.
   useEffect(() => {
+    const prevCount = prevMessageCountRef.current;
+    const count = messages.length;
+    prevMessageCountRef.current = count;
+
+    const last = messages[count - 1];
+    const singleNewAssistantMessage =
+      count === prevCount + 1 && prevCount > 0 && last?.role === 'assistant';
+
+    if (singleNewAssistantMessage && !isLoading) {
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     scrollToBottom();
   }, [messages, isLoading]);
 
@@ -97,7 +118,7 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto relative z-0">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center items-center px-4 md:px-8 pt-16 md:pt-24">
+          <div className="min-h-full flex flex-col justify-center items-center px-4 md:px-8 py-6 md:py-10">
             {/* Centered loader while the database is being fetched.
                 Replaces the welcome copy; the input form and prompts
                 below remain visible and interactive. */}
@@ -232,9 +253,15 @@ export function ChatWindow({
             </div>
           </div>
         ) : (
-          <div className="pt-12 md:pt-14 pb-24 md:pb-28">
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isInsufficientInfo={msg.isInsufficientInfo} />
+          <div className="pt-4 md:pt-6 pb-24 md:pb-28">
+            {messages.map((msg, index) => (
+              <div
+                key={msg.id}
+                ref={index === messages.length - 1 ? lastMessageRef : undefined}
+                className="scroll-mt-2"
+              >
+                <MessageBubble role={msg.role} content={msg.content} isInsufficientInfo={msg.isInsufficientInfo} />
+              </div>
             ))}
             {isLoading && (
               <div className="flex w-full py-4 md:py-6 bg-zinc-50 dark:bg-zinc-900">

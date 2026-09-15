@@ -1043,7 +1043,9 @@ export default function App() {
           </button>
         </div>
 
-        <div className="relative">
+        {/* In-flow: the map takes its own space above the chat area, so it
+            never overlaps the welcome text or the messages. */}
+        <div className="shrink-0">
           <NavigationMap
             currentPhase={effectivePhase}
             currentStep={effectiveStep}
@@ -1055,7 +1057,7 @@ export default function App() {
           />
         </div>
 
-        <div className="flex-1 relative min-h-0 pt-6">
+        <div className="flex-1 relative min-h-0">
           {isCompareMode ? (
             <>
               <CompareChatView
