@@ -155,6 +155,9 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
   const [isNavMapOpen, setIsNavMapOpen] = useState(false);
+  // Incremented whenever a new consultation starts; the workflow map re-opens
+  // each time this changes (Nora: "always open when we open a new consultation").
+  const [newConsultationCount, setNewConsultationCount] = useState(0);
 
   const [responseMode, setResponseMode] = useState<'basic' | 'condensed'>('basic');
 
@@ -438,6 +441,7 @@ export default function App() {
     setCurrentPhase(null);
     setCurrentStep(null);
     setLastDetectedPhase(null);
+    setNewConsultationCount((n) => n + 1);
   };
 
   // Create a new dual conversation via API.
@@ -460,6 +464,7 @@ export default function App() {
       setCurrentPhase(null);
       setCurrentStep(null);
       setLastDetectedPhase(null);
+      setNewConsultationCount((n) => n + 1);
       setIsSidebarOpen(false);
       setConversations(prev => [apiConvToLocal(conversation), ...prev]);
     } catch (error) {
@@ -482,6 +487,7 @@ export default function App() {
       setCurrentPhase(null);
       setCurrentStep(null);
       setLastDetectedPhase(null);
+      setNewConsultationCount((n) => n + 1);
       setIsSidebarOpen(false);
       setConversations(prev => [apiConvToLocal(conversation), ...prev]);
     } catch (error) {
@@ -1054,6 +1060,7 @@ export default function App() {
             onSelectStep={handleSelectStep}
             onShowResources={() => setShowResourcesPanel(true)}
             onToggleOpen={(open) => setIsNavMapOpen(open)}
+            openSignal={newConsultationCount}
           />
         </div>
 

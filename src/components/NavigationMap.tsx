@@ -60,6 +60,8 @@ interface NavigationMapProps {
   onSelectStep: (step: string) => void;
   onShowResources?: () => void;
   onToggleOpen?: (isOpen: boolean) => void;
+  /** Change this value (e.g. a counter) to force the map open, used when a new consultation starts. */
+  openSignal?: number;
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
@@ -77,6 +79,7 @@ export function NavigationMap({
   onSelectStep,
   onShowResources,
   onToggleOpen,
+  openSignal,
 }: NavigationMapProps) {
   // Always open when the page loads (desktop); collapsed on phones. Collapsing
   // it lasts only for the current page view: a refresh brings it back
@@ -98,6 +101,12 @@ export function NavigationMap({
     media.addListener(handler);
     return () => media.removeListener(handler);
   }, []);
+
+  // A new consultation always starts with the map open (desktop).
+  useEffect(() => {
+    if (openSignal === undefined) return;
+    setIsOpen(!isMobileViewport());
+  }, [openSignal]);
 
   useEffect(() => {
     onToggleOpen?.(isOpen);
