@@ -126,8 +126,8 @@ async function main() {
         const r = await runClassificationPipeline(c.prompt, [], 'openai');
         rec.got_path = r.template;
         rec.got_tier1_complete = r.tier1Complete;
-        rec.got_query_type = r.classification?.query_type_id;
-        rec.got_confidence = r.classification?.confidence;
+        rec.got_query_type = r.classification?.query_type_id ?? null;
+        rec.got_confidence = r.classification?.confidence ?? null;
         rec.safety_override = r.safetyOverride;
         rec.fallback = r.fallbackTriggered;
         rec.fallback_reason = r.fallbackReason;
